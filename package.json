@@ -1,0 +1,23 @@
+{
+  "name": "email-validation-go",
+  "version": "1.0.0",
+  "description": "Advanced Email Validation Tutorial in Go",
+  "main": "main.go",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamspathan/apyhub-email-validation-tutorial-go.git"
+  },
+  "keywords": [
+    "go",
+    "email-validation"
+  ],
+  "author": "Sohai Pathan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iamspathan/apyhub-email-validation-tutorial-go/issues"
+  },
+  "homepage": "https://github.com/iamspathan/apyhub-email-validation-tutorial-go#readme"
+}
