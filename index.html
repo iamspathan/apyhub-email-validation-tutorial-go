@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Email Validation with Apyhub </title>
+    
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+      }
+      h1 {
+        text-align: center;
+        margin-top: 50px;
+      }
+      form {
+        width: 50%;
+        margin: 0 auto;
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        margin-bottom: 20px;
+      }
+      input[type="submit"] {
+        background-color: #4CAF50;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      input[type="submit"]:hover {
+        background-color: #3e8e41;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div>
+      <div>
+        <img src="https://www.linkpicture.com/q/apyhub-mascot-1.png"  class="left" width="20%"  height="20%" alt="Apyhub Mascot">
+        <h1>
+          Welcome aboard! Sign up to get started
+        </h1>
+      </div>
+      
+      <form action="/signup" method="POST" onsubmit="signupForm(event)">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" onkeyup="checkEmailValidity(this)">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password">
+        <input type="submit" value="Sign Up">
+      </form>
+    </div>
+    
+    <!-- <form action="/login" method="POST">
+      <h1>User Login</h1>
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username">
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password">
+      <input type="submit" value="Log In">
+    </form> -->
+    
+  <script>  
+
+    function loginForm(event) {
+
+        event.preventDefault(); // prevent the form from submitting normally
+
+        const form = event.target; // get the form element
+        const url = "http://localhost:3000"; // set the URL to send the request to
+
+        // create a new XMLHttpRequest object
+        const xhr = new XMLHttpRequest();
+
+        // set up the request
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        // set up a callback function to handle the response
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            console.log(xhr.responseText); // log the response text to the console
+          }
+        }
+
+        // send the request with the form data as JSON
+        const formData = new FormData(form);
+        const data = JSON.stringify(Object.fromEntries(formData.entries()));
+        xhr.send(data);
+      }
+
+
+    function signupForm(event) {
+        event.preventDefault(); // prevent the form from submitting normally
+
+        const form = event.target; // get the form element
+        const url = "http://localhost:3000/signup"; // set the URL to send the request to
+
+        // create a new FormData object to store the form data
+        const formData = new FormData(form);
+
+        // create a new fetch request with the form data as a JSON payload
+        fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(Object.fromEntries(formData.entries()))
+        })
+          .then(response => {
+            if (response.ok) {
+              console.log("Signup successful!");
+              alert("Signup successful!");
+            } else {
+              alert("Please enter the valid email address");
+              throw new Error("Signup failed");
+              
+            }
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      }
+
+    </script>
+  </body>
+</html>
