@@ -55,9 +55,6 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create account
-	// ...
-
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "User %s created successfully", username)
 }
