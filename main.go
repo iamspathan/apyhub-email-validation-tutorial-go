@@ -1,21 +1,38 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 var users = make(map[string]string)
 
 func main() {
-	http.HandleFunc("/signup", signupHandler)
-	http.HandleFunc("/login", loginHandler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", indexHandler)
+	mux.HandleFunc("/signup", signupHandler)
+	mux.HandleFunc("/login", loginHandler)
 
-	fmt.Println("Server running at http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	corsHandler := corsMiddleware(mux)
+
+	fmt.Println("Server running at http://localhost:3000")
+	http.ListenAndServe(":3000", corsHandler)
+}
+
+func corsMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		// Here "*" is used to allow any origin
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+		// Call the next handler
+		handler.ServeHTTP(w, r)
+	})
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,18 +45,40 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(html)
 }
 
+type SignupForm struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginForm struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func signupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		return
+	}
 
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-	email := r.FormValue("email")
+	var form SignupForm
+	err = json.Unmarshal(body, &form)
+	if err != nil {
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		return
+	}
 
-	if username == "" || password == "" || email == "" {
-		http.Error(w, "Username, password and email are required", http.StatusBadRequest)
+	password := form.Password
+	email := form.Email
+
+	if password == "" || email == "" {
+		http.Error(w, "password and email are required", http.StatusBadRequest)
 		return
 	}
 
@@ -56,7 +95,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "User %s created successfully", username)
+	fmt.Fprintf(w, "User %s created successfully")
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,9 +103,22 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		return
+	}
 
-	username := r.FormValue("username")
-	password := r.FormValue("password")
+	var form LoginForm
+	err = json.Unmarshal(body, &form)
+	if err != nil {
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		return
+	}
+
+	username := form.Username
+	password := form.Password
 
 	if username == "" || password == "" {
 		http.Error(w, "Username and password are required", http.StatusBadRequest)
@@ -86,14 +138,28 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 func validateEmail(email string) (bool, error) {
 	url := "https://api.apyhub.com/validate/email/dns"
 
-	payload := strings.NewReader(fmt.Sprintf("{\n    \"email\":\"%s\"\n}", email))
+	payload := struct {
+		Email string `json:"email"`
+	}{
+		Email: email,
+	}
 
-	req, err := http.NewRequest("POST", url, payload)
+	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return false, err
 	}
 
-	req.Header.Add("apy-token", "APY0q37lVqWKoW6ggl7T9CmdsqFlZvigsiR70b0KIiGkrVuSR6aA8KsQU9O4WvbMjZAWHikXCZR")
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return false, err
+	}
+
+	if err != nil {
+		return false, err
+	}
+	// Add your apy-token here.
+	
+	req.Header.Add("apy-token", "*********** ADD YOUR SECRET APY TOKEN HERE **************")
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
@@ -108,20 +174,12 @@ func validateEmail(email string) (bool, error) {
 	}
 
 	var response struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-		Result  struct {
-			Valid bool `json:"valid"`
-		} `json:"result"`
+		Valid bool `json:"data"`
 	}
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return false, err
 	}
 
-	if response.Status != "success" {
-		return false, fmt.Errorf("API error: %s", response.Message)
-	}
-
-	return response.Result.Valid, nil
+	return response.Valid, nil
 }
